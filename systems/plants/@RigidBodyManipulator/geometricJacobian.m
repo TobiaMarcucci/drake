@@ -23,7 +23,7 @@ vIndices = vertcat(obj.body(jointPath).velocity_num);
 
 if isempty(jointPath)
   J = zeros(6,0);
-  dJdq = zeros(0, obj.num_positions); % TODO: test
+  dJdq = zeros(0, obj.num_positions);
   return;
 end
 

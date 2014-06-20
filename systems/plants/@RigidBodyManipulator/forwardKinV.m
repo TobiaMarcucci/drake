@@ -81,10 +81,11 @@ end
 % compute geometric Jacobian dot times v.
 if compute_Jdot_times_v
   if compute_gradient
-    [twist, dtwist] = relativeTwist(kinsol, base, end_effector, expressed_in);
+    [twist, dtwist] = relativeTwist(obj, kinsol, base, end_effector, expressed_in);
     [J_geometric_dot_v, dJ_geometric_dot_v] = geometricJacobianDotV(obj, kinsol, base, end_effector, expressed_in);
+    dJ_geometric_dot_v = dJ_geometric_dot_v(:, 1:nq); % only return q gradients
   else
-    twist = relativeTwist(kinsol, base, end_effector, expressed_in);
+    twist = relativeTwist(obj, kinsol, base, end_effector, expressed_in);
     J_geometric_dot_v = geometricJacobianDotV(obj, kinsol, base, end_effector, expressed_in);
   end
 end

@@ -27,7 +27,7 @@ for i = 2 : nBodies
   
   predecessorAccel = ret{predecessor};
   jointAccelInBody = motionSubspace(body, qBody) * vdBody + motionSubspaceDotV(body, qBody, vBody);
-  jointAccelInBase = transformSpatialAcceleration(kinsol, predecessor, i, i, world, jointAccelInBody);
+  jointAccelInBase = transformSpatialAcceleration(obj, kinsol, predecessor, i, i, world, jointAccelInBody);
   ret{i} = predecessorAccel + jointAccelInBase;
 end
 

@@ -230,7 +230,7 @@ bodies = model.body;
 world = 1;
 nb = length(bodies);
 if compute_gradients
-  nq = size(kinsol.dTdq{end}, 2);
+  nq = length(kinsol.q);
   nv = length(kinsol.v);
 end
 
@@ -247,7 +247,7 @@ for i = 2 : nb
   body = bodies(i);
   parent = body.parent;
 
-  % joint_accel = transformSpatialAcceleration(kinsol, parent, i, i, world, SdotV{i});
+  % joint_accel = transformSpatialAcceleration(model, kinsol, parent, i, i, world, SdotV{i});
   % faster in this case, and easier to derive gradients:
   twist = kinsol.twists{i};
   joint_twist = kinsol.twists{i} - kinsol.twists{parent};

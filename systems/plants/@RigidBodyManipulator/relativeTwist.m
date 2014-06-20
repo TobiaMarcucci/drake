@@ -1,4 +1,4 @@
-function [twist, dtwist] = relativeTwist(kinsol, base, end_effector, expressed_in)
+function [twist, dtwist] = relativeTwist(obj, kinsol, base, end_effector, expressed_in)
 % RELATIVETWIST Computes the relative twist between base and end effector
 % @param transforms homogeneous transforms from link to world (usually
 % obtained from doKinematics as kinsol.T)
@@ -16,7 +16,11 @@ compute_gradient = nargout > 1;
 
 twist = kinsol.twists{end_effector} - kinsol.twists{base};
 if compute_gradient
-  dtwist = kinsol.dtwistsdq{end_effector} - kinsol.dtwistsdq{base};
+  dtwistdq = kinsol.dtwistsdq{end_effector} - kinsol.dtwistsdq{base};
+  
+  dtwistdv = zeros(numel(twist), length(kinsol.v)) * kinsol.v(1);
+  [J, v_indices] = geometricJacobian(obj, kinsol, base, end_effector, expressed_in);
+  dtwistdv(:, v_indices) = J;
 end
 
 if expressed_in ~= 1
@@ -25,8 +29,13 @@ if expressed_in ~= 1
   if compute_gradient
     dT = kinsol.dTdq{expressed_in};
     dTinv = dinvT(T, dT);
-    dtwist = dAdHTimesX(Tinv, twist, dTinv, dtwist);
+    dtwistdq = dAdHTimesX(Tinv, twist, dTinv, dtwistdq);
   end
   twist = transformTwists(Tinv, twist);
 end
+
+if compute_gradient
+  dtwist = [dtwistdq dtwistdv];
+end
+
 end
