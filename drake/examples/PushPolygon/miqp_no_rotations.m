@@ -11,16 +11,22 @@ num_vars = N*num_vars_per_timestep + 6; % r,rdot, and p are also defined for tim
 
 %% setup helper variable indices 
 % ind(n,:) are the indices for the variable at time n
-function inds = allTimeSteps(inds_one_timestep,N)
+x = msspoly('x',num_vars);
+function inds = allTimeSteps(inds_one_timestep,N,name)
   inds = repmat(inds_one_timestep,N,1) + repmat((0:N-1)'*num_vars_per_timestep,1,size(inds_one_timestep,2));
+  if nargin>2
+    for i=1:N
+      x(inds(i,:)) = msspoly([name,char('a'+(i-1))],length(inds_one_timestep));
+    end
+  end
 end
-r_inds=allTimeSteps(1:2,N+1); 
-rdot_inds=allTimeSteps(3:4,N+1);
-p_inds=allTimeSteps(5:6,N+1);
-pdot_inds=allTimeSteps(7:8,N);
-beta1_inds=allTimeSteps(pdot_inds(1,end)+(1:num_faces),N);
-beta2_inds=allTimeSteps(beta1_inds(1,end)+(1:num_faces),N);
-z_inds=allTimeSteps(beta1_inds(1,end)+(1:num_faces),N);
+r_inds=allTimeSteps(1:2,N+1,'r'); 
+rdot_inds=allTimeSteps(3:4,N+1,'rd');
+p_inds=allTimeSteps(5:6,N+1,'p');
+pdot_inds=allTimeSteps(7:8,N,'pd');
+beta1_inds=allTimeSteps(pdot_inds(1,end)+(1:num_faces),N,'ba');
+beta2_inds=allTimeSteps(beta1_inds(1,end)+(1:num_faces),N,'bb');
+z_inds=allTimeSteps(beta2_inds(1,end)+(1:num_faces),N,'z');
 
 %% setup model
 model.vtype = [repmat([repmat('C',num_vars_per_timestep-num_faces,1);repmat('B',num_faces,1)],N,1);repmat('C',6,1)];
@@ -60,21 +66,21 @@ for n=1:N
     model.sense(cind) = '=';
   
     %% p[n+1] = p[n]+h*pdot[n-1]
-    cind = size(model.A,1)+(1:2);
+    cind = size(model.A,1)+1;
     model.A(cind,p_inds(n+1,i)) = 1;
     model.A(cind,p_inds(n,i)) = -1;
     model.A(cind,pdot_inds(n,i)) = -h;
     model.rhs(cind) = 0;
     model.sense(cind) = '=';
-    
-    %% b_polygon-M*(1-z[n]) <= A_polygon p[n]
-    cind = size(model.A,1)+(1:num_faces);
-    model.A(cind,p_inds(n,:)) = A_polygon;
-    model.A(cind,z_inds(n,:)) = -bigM;
-    model.rhs(cind) = b_polygon - bigM;
-    model.sense(cind) = '>';
   end
     
+  %% b_polygon-M*(1-z[n]) <= A_polygon p[n]
+  cind = size(model.A,1)+(1:num_faces);
+  model.A(cind,p_inds(n,:)) = -A_polygon;
+  model.A(cind,z_inds(n,:)) = bigM*eye(num_faces);
+  model.rhs(cind) = -b_polygon + bigM;
+  model.sense(cind) = '<';
+
   %% A_polygon p[n] <= b_polygon
   cind = size(model.A,1)+(1:num_faces);
   model.A(cind,p_inds(n,:)) = A_polygon;
@@ -82,8 +88,8 @@ for n=1:N
   model.sense(cind) = '<';
   
   %% 0 \le \beta_1[n],\beta_2[n] \le Mz[n]
-  model.lb(beta1_inds(n,i),1) = 0;
-  model.lb(beta2_inds(n,i),1) = 0;
+  model.lb(beta1_inds(n,:),1) = 0;
+  model.lb(beta2_inds(n,:),1) = 0;
   cind = size(model.A,1)+(1:num_faces);
   model.A(cind,beta1_inds(n,:)) = eye(num_faces);
   model.A(cind,z_inds(n,:)) = -bigM*eye(num_faces);
@@ -126,8 +132,7 @@ model.A(cind,r_inds(N+1,:)) = eye(2);
 model.rhs(cind) = rF;
 model.sense(cind) = '=';
 
-x = msspoly('x',num_vars);
-model.A * x - model.rhs'
+%[model.A * x - model.rhs']
 
 %% solve
 result = gurobi(model);
@@ -140,6 +145,7 @@ beta1 = result.x(beta1_inds)'
 beta2 = result.x(beta2_inds)'
 z = result.x(z_inds)'
 
-plot(r(1,:),r(2,:),p(1,:),p(2,:))
+
+plot(r(1,:),r(2,:),p(1,:)+r(1,:),p(2,:)+r(2,:))
 
 end
