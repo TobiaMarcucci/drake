@@ -1,9 +1,9 @@
-function result = miqp_no_rotations(A_polygon,b_polygon,m,mu,h,r0,p0,rF,N)
+function ytraj = miqpNoRotations(obj,r0,p0,rF,N)
 
 checkDependency('gurobi');
 
-A_bar_polygon = [A_polygon(:,2),-A_polygon(:,1)];
-num_faces = size(A_polygon,1);
+A_bar = [obj.A(:,2),-obj.A(:,1)];
+num_faces = size(obj.A,1);
 
 %% Decision variables: $$r[n],\dot{r}[n],p[n],\dot{p}[n],\beta_1[n],\beta_2[n],z[n],$$
 num_vars_per_timestep = 8 + 3*num_faces;
@@ -50,10 +50,10 @@ for n=1:N
   for i=1:2
     %% m(rdot[n+1]-rdot[n])/h = -(A+mu*A_bar)^T\beta1[n] + -(A-mu*A_bar)^T beta2[n]
     cind = size(model.A,1)+1;
-    model.A(cind,rdot_inds(n+1,i)) = m/h;
-    model.A(cind,rdot_inds(n,i)) = -m/h;
-    model.A(cind,beta1_inds(n,:)) = (A_polygon(:,i)+mu*A_bar_polygon(:,i))';
-    model.A(cind,beta2_inds(n,:)) = (A_polygon(:,i)-mu*A_bar_polygon(:,i))';
+    model.A(cind,rdot_inds(n+1,i)) = obj.m/obj.h;
+    model.A(cind,rdot_inds(n,i)) = -obj.m/obj.h;
+    model.A(cind,beta1_inds(n,:)) = (obj.A(:,i)+obj.mu*A_bar(:,i))';
+    model.A(cind,beta2_inds(n,:)) = (obj.A(:,i)-obj.mu*A_bar(:,i))';
     model.rhs(cind) = 0;
     model.sense(cind) = '=';
   
@@ -61,7 +61,7 @@ for n=1:N
     cind = size(model.A,1)+1;
     model.A(cind,r_inds(n+1,i)) = 1;
     model.A(cind,r_inds(n,i)) = -1;
-    model.A(cind,rdot_inds(n,i)) = -h;
+    model.A(cind,rdot_inds(n,i)) = -obj.h;
     model.rhs(cind) = 0;
     model.sense(cind) = '=';
   
@@ -69,22 +69,22 @@ for n=1:N
     cind = size(model.A,1)+1;
     model.A(cind,p_inds(n+1,i)) = 1;
     model.A(cind,p_inds(n,i)) = -1;
-    model.A(cind,pdot_inds(n,i)) = -h;
+    model.A(cind,pdot_inds(n,i)) = -obj.h;
     model.rhs(cind) = 0;
     model.sense(cind) = '=';
   end
     
-  %% b_polygon-M*(1-z[n]) <= A_polygon p[n]
+  %% b_polygon-M*(1-z[n]) <= obj.A p[n]
   cind = size(model.A,1)+(1:num_faces);
-  model.A(cind,p_inds(n,:)) = -A_polygon;
+  model.A(cind,p_inds(n,:)) = -obj.A;
   model.A(cind,z_inds(n,:)) = bigM*eye(num_faces);
-  model.rhs(cind) = -b_polygon + bigM;
+  model.rhs(cind) = -obj.b + bigM;
   model.sense(cind) = '<';
 
-  %% A_polygon p[n] <= b_polygon
+  %% obj.A p[n] <= b_polygon
   cind = size(model.A,1)+(1:num_faces);
-  model.A(cind,p_inds(n,:)) = A_polygon;
-  model.rhs(cind) = b_polygon;
+  model.A(cind,p_inds(n,:)) = obj.A;
+  model.rhs(cind) = obj.b;
   model.sense(cind) = '<';
   
   %% 0 \le \beta_1[n],\beta_2[n] \le Mz[n]
@@ -137,15 +137,15 @@ model.sense(cind) = '=';
 %% solve
 result = gurobi(model);
 
-r = result.x(r_inds)'
-rdot = result.x(rdot_inds)'
-p = result.x(p_inds)'
-pdot = result.x(pdot_inds)'
-beta1 = result.x(beta1_inds)'
-beta2 = result.x(beta2_inds)'
-z = result.x(z_inds)'
+r = result.x(r_inds)';
+rdot = result.x(rdot_inds)';
+p = result.x(p_inds)';
+pdot = result.x(pdot_inds)';
+beta1 = result.x(beta1_inds)';
+beta2 = result.x(beta2_inds)';
+z = result.x(z_inds)';
 
-
-plot(r(1,:),r(2,:),p(1,:)+r(1,:),p(2,:)+r(2,:))
+ytraj = DTTrajectory((0:N)*obj.h,[r;p]);
+ytraj = setOutputFrame(ytraj,getOutputFrame(obj));
 
 end
