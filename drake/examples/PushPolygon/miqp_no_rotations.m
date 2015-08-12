@@ -48,12 +48,12 @@ for n=1:N
   model.sense(end+1) = '<';
   
   for i=1:2
-    %% m(rdot[n+1]-rdot[n])/h = (A+mu*A_bar)^T\beta1[n] + (A-mu*A_bar)^T beta2[n]
+    %% m(rdot[n+1]-rdot[n])/h = -(A+mu*A_bar)^T\beta1[n] + -(A-mu*A_bar)^T beta2[n]
     cind = size(model.A,1)+1;
     model.A(cind,rdot_inds(n+1,i)) = m/h;
     model.A(cind,rdot_inds(n,i)) = -m/h;
-    model.A(cind,beta1_inds(n,:)) = -(A_polygon(:,i)+mu*A_bar_polygon(:,i))';
-    model.A(cind,beta2_inds(n,:)) = -(A_polygon(:,i)-mu*A_bar_polygon(:,i))';
+    model.A(cind,beta1_inds(n,:)) = (A_polygon(:,i)+mu*A_bar_polygon(:,i))';
+    model.A(cind,beta2_inds(n,:)) = (A_polygon(:,i)-mu*A_bar_polygon(:,i))';
     model.rhs(cind) = 0;
     model.sense(cind) = '=';
   
