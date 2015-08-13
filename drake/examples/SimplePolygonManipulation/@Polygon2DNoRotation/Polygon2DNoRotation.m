@@ -5,6 +5,7 @@ classdef Polygon2DNoRotation < DrakeSystem
     m = 1;
     mu = .1;  % coefficient of friction
     h = .1;   % timestep
+    c = .2;   % damping coefficient
   end
 
   methods

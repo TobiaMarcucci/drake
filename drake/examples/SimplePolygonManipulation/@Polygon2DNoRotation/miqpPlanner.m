@@ -36,7 +36,8 @@ model.sense = '';
 model.lb = -inf(num_vars,1);
 model.ub = inf(num_vars,1);
 
-model.Q = sparse(pdot_inds(:),pdot_inds(:),1+0*pdot_inds(:),num_vars,num_vars);
+cost_inds = [pdot_inds(:);rdot_inds(:)];
+model.Q = sparse(cost_inds,cost_inds,1+0*cost_inds,num_vars,num_vars);
 model.obj = zeros(num_vars,1);
 
 bigM = 1e2;
@@ -48,10 +49,10 @@ for n=1:N
   model.sense(end+1) = '<';
   
   for i=1:2
-    %% m(rdot[n+1]-rdot[n])/h = -(A+mu*A_bar)^T\beta1[n] + -(A-mu*A_bar)^T beta2[n]
+    %% m(rdot[n+1]-rdot[n])/h = -(A+mu*A_bar)^T\beta1[n] + -(A-mu*A_bar)^T beta2[n] - c rdot[n]
     cind = size(model.A,1)+1;
     model.A(cind,rdot_inds(n+1,i)) = obj.m/obj.h;
-    model.A(cind,rdot_inds(n,i)) = -obj.m/obj.h;
+    model.A(cind,rdot_inds(n,i)) = -obj.m/obj.h + obj.c;
     model.A(cind,beta1_inds(n,:)) = (obj.A(:,i)+obj.mu*A_bar(:,i))';
     model.A(cind,beta2_inds(n,:)) = (obj.A(:,i)-obj.mu*A_bar(:,i))';
     model.rhs(cind) = 0;
