@@ -93,5 +93,22 @@ classdef (InferiorClasses = {?ConstantTrajectory,?FunctionHandleTrajectory,?PPTr
       obj = setOutputFrame(obj,MultiCoordinateFrame(fr));
     end
 
+    function c = plus(a,b)
+      % todo: handle all of the other cases 
+      % (this is the one needed for affine transforms)
+      if isnumeric(a)
+        c = DTTrajectory(b.tt,repmat(a,1,numel(b.tt))+b.xx);
+      elseif isnumeric(b)
+        c = DTTrajectory(a.tt,a.xx+repmat(b,1,numel(a.tt)));
+      end
+    end
+    
+    function c = mtimes(a,b)
+      % todo: handle all of the other cases 
+      % (this is the one needed for affine transforms)
+      if isnumeric(a) 
+        c = DTTrajectory(b.tt,a*b.xx);
+      end
+    end
   end
 end

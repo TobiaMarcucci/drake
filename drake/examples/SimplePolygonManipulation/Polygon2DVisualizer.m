@@ -1,14 +1,14 @@
-classdef Polygon2DNoRotationVisualizer < Visualizer
+classdef Polygon2DVisualizer < Visualizer
 
   properties
     vertices
   end
 
   methods
-    function obj = Polygon2DNoRotationVisualizer(push_poly)
-      typecheck(push_poly,'Polygon2DNoRotation');
-      obj = obj@Visualizer(push_poly.getOutputFrame());
-      obj.vertices = lcon2vert(push_poly.A,push_poly.b)';
+    function obj = Polygon2DVisualizer(poly2d)
+      typecheck(poly2d,{'Polygon2D','Polygon2DNoRotation'});
+      obj = obj@Visualizer(Polygon2D.singletonOutputFrame());
+      obj.vertices = lcon2vert(poly2d.A,poly2d.b)';
       k = convhull(obj.vertices(1,:),obj.vertices(2,:));
       obj.vertices = obj.vertices(:,k);
     end
@@ -16,7 +16,8 @@ classdef Polygon2DNoRotationVisualizer < Visualizer
     function draw(obj,~,y)
       r = y(1:2);
       p = y(3:4);
-      active_face = y(5);
+      theta = y(5);
+      active_face = y(6);
       pts = obj.vertices + repmat(r,1,size(obj.vertices,2));
       patch(pts(1,:),pts(2,:),'c');
       if (active_face>.01)

@@ -1,4 +1,4 @@
-classdef Polygon2DNoRotation < DrakeSystem
+classdef Polygon2D < DrakeSystem
   
   properties
     A,b;      % convex polygon is defined as Ax \le b
@@ -9,10 +9,9 @@ classdef Polygon2DNoRotation < DrakeSystem
   end
 
   methods
-    function obj = Polygon2DNoRotation(A,b)
-      obj = obj@DrakeSystem(0,6,2,5,false,true);
-      obj = setOutputFrame(obj,CoordinateFrame('PolygonNoRotationPosition',5,'y',{'rx','ry','px','py','active_face'}));
-      addProjectionTransformByCoordinateNames(obj.getOutputFrame(),Polygon2D.singletonOutputFrame());
+    function obj = Polygon2D(A,b)
+      obj = obj@DrakeSystem(0,8,2,6,false,true);
+      obj = obj.setOutputFrame(Polygon2D.singletonOutputFrame());
       obj.A = A;
       obj.b = b;
     end
@@ -26,8 +25,8 @@ classdef Polygon2DNoRotation < DrakeSystem
       p0=zeros(2,1);
       rF=randn(2,1);
       N=10;
-      v = Polygon2DVisualizer(obj);
-      v.drawWrapper(0,[r0;p0;0;0]);
+      v = Polygon2DNoRotationVisualizer(obj);
+      v.drawWrapper(0,[r0;p0;0]);
       v.playback_speed = 0.25;
       
       ytraj=miqpPlanner(obj,r0,p0,rF,N);
@@ -39,14 +38,18 @@ classdef Polygon2DNoRotation < DrakeSystem
     
     function obj = box()
       A = [1,0;0,1;-1,0;0,-1]; b=[1;1;1;1];
-      obj = Polygon2DNoRotation(A,b);
+      obj = Polygon2D(A,b);
     end
     
     function obj = random(num_vertices)
-      vertices = 2*randn(num_vertices,2);
+      vertices = randn(num_vertices,2);
       vertices = vertices - repmat(mean(vertices,1),size(vertices,1),1);
       [A,b] = vert2lcon(vertices);
-      obj = Polygon2DNoRotation(A,b);
+      obj = Polygon2D(A,b);
+    end
+    
+    function fr = singletonOutputFrame()
+      fr = SingletonCoordinateFrame('PolygonPosition',6,'x',{'rx','ry','px','py','theta','active_face'});
     end
   end
 end
