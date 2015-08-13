@@ -16,9 +16,14 @@ classdef Polygon2DNoRotationVisualizer < Visualizer
     function draw(obj,~,y)
       r = y(1:2);
       p = y(3:4);
+      active_face = y(5);
       pts = obj.vertices + repmat(r,1,size(obj.vertices,2));
       patch(pts(1,:),pts(2,:),'c');
-      plot(r(1)+p(1),r(2)+p(2),'r.','MarkerSize',12);
+      if (active_face>.01)
+        plot(r(1)+p(1),r(2)+p(2),'g.','MarkerSize',12);
+      else
+        plot(r(1)+p(1),r(2)+p(2),'r.','MarkerSize',12);
+      end
       axis equal;
       if isempty(obj.axis)
         axis([-4 4 -4 4]);

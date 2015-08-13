@@ -9,7 +9,7 @@ classdef Polygon2DNoRotation < DrakeSystem
 
   methods
     function obj = Polygon2DNoRotation(A,b)
-      obj = obj@DrakeSystem(0,6,2,4,false,true);
+      obj = obj@DrakeSystem(0,6,2,5,false,true);
       obj.A = A;
       obj.b = b;
     end
@@ -24,7 +24,8 @@ classdef Polygon2DNoRotation < DrakeSystem
       rF=randn(2,1);
       N=10;
       v = Polygon2DNoRotationVisualizer(obj);
-      v.drawWrapper(0,[r0;p0]);
+      v.drawWrapper(0,[r0;p0;0]);
+      v.playback_speed = 0.25;
       
       ytraj=miqpPlanner(obj,r0,p0,rF,N);
       v.playback(ytraj);

@@ -39,7 +39,7 @@ model.ub = inf(num_vars,1);
 model.Q = sparse(pdot_inds(:),pdot_inds(:),1+0*pdot_inds(:),num_vars,num_vars);
 model.obj = zeros(num_vars,1);
 
-bigM = 1e6;
+bigM = 1e2;
 
 for n=1:N
   %% sum_i z_i[n] <= 1
@@ -145,7 +145,9 @@ beta1 = result.x(beta1_inds)';
 beta2 = result.x(beta2_inds)';
 z = result.x(z_inds)';
 
-ytraj = DTTrajectory((0:N)*obj.h,[r;p]);
+active_face = (1:num_faces)*z;
+
+ytraj = DTTrajectory((0:N)*obj.h,[r;p;[active_face,0]]);
 ytraj = setOutputFrame(ytraj,getOutputFrame(obj));
 
 end
