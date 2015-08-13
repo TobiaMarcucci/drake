@@ -2,6 +2,7 @@ classdef Polygon2D < DrakeSystem
   
   properties
     A,b;      % convex polygon is defined as Ax \le b
+    I = 1;
     m = 1;
     mu = .1;  % coefficient of friction
     h = .1;   % timestep
@@ -23,13 +24,15 @@ classdef Polygon2D < DrakeSystem
     function planDemo(obj)
       r0=zeros(2,1); 
       p0=zeros(2,1);
+      theta0 = 0;
       rF=randn(2,1);
+      thetaF = randn();
       N=10;
-      v = Polygon2DNoRotationVisualizer(obj);
-      v.drawWrapper(0,[r0;p0;0]);
+      v = Polygon2DVisualizer(obj);
+      v.drawWrapper(0,[r0;p0;theta0;0]);
       v.playback_speed = 0.25;
       
-      ytraj=miqpPlanner(obj,r0,p0,rF,N);
+      ytraj=imiqpPlanner(obj,r0,p0,theta0,rF,thetaF,N);
       v.playback(ytraj);
     end
   end
