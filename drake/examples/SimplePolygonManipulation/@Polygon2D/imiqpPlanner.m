@@ -24,10 +24,10 @@ end
 r_inds=allTimeSteps(1:2,N+1,'r'); 
 p_inds=allTimeSteps(3:4,N+1,'p');
 theta_inds=allTimeSteps(5,N+1,'th');
-rdot_inds=allTimeSteps(6:7,N+1,'rd');
-thetadot_inds=allTimeSteps(8,N+1,'thd');
-pdot_inds=allTimeSteps(9:10,N,'pd');
-beta1_inds=allTimeSteps(11+(1:num_faces),N,'ba');
+rdot_inds=allTimeSteps(6:7,N+1,'dr');
+thetadot_inds=allTimeSteps(8,N+1,'dth');
+pdot_inds=allTimeSteps(9:10,N,'dp');
+beta1_inds=allTimeSteps(10+(1:num_faces),N,'ba');
 beta2_inds=allTimeSteps(beta1_inds(1,end)+(1:num_faces),N,'bb');
 z_inds=allTimeSteps(beta2_inds(1,end)+(1:num_faces),N,'z');
 
@@ -44,8 +44,8 @@ model.obj = zeros(num_vars,1);
 bigM = 1e2;
 
 model.Q = sparse(num_vars,num_vars);
-x0 = zeros(num_vars,1);  % initialize iterations
-result.x = ones(num_vars,1);
+result.x = zeros(num_vars,1);
+x0 = ones(num_vars,1);  % initialize iterations
 
 fn_beta1 = -(obj.A+obj.mu*A_bar)';
 fn_beta2 = -(obj.A-obj.mu*A_bar)';

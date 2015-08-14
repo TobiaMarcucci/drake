@@ -22,9 +22,9 @@ function inds = allTimeSteps(inds_one_timestep,N,name)
 %  end
 end
 r_inds=allTimeSteps(1:2,N+1,'r'); 
-rdot_inds=allTimeSteps(3:4,N+1,'rd');
+rdot_inds=allTimeSteps(3:4,N+1,'dr');
 p_inds=allTimeSteps(5:6,N+1,'p');
-pdot_inds=allTimeSteps(7:8,N,'pd');
+pdot_inds=allTimeSteps(7:8,N,'dp');
 beta1_inds=allTimeSteps(pdot_inds(1,end)+(1:num_faces),N,'ba');
 beta2_inds=allTimeSteps(beta1_inds(1,end)+(1:num_faces),N,'bb');
 z_inds=allTimeSteps(beta2_inds(1,end)+(1:num_faces),N,'z');
