@@ -12,6 +12,9 @@ namespace drake {
 namespace manipulation {
 namespace planner {
 
+using Eigen::VectorXd;
+using Eigen::MatrixXd;
+
 namespace {
 DifferentialInverseKinematicsResult DoDifferentialInverseKinematics(
     const Eigen::Ref<const VectorX<double>>& q_current,
@@ -100,7 +103,8 @@ DifferentialInverseKinematicsParameters::
                                             int num_velocities)
     : num_positions_(num_positions),
       num_velocities_(num_velocities),
-      nominal_joint_position_(VectorX<double>::Zero(num_positions)) {}
+      nominal_joint_position_(VectorXd::Zero(num_positions)),
+      nominal_joint_position_gain_(VectorXd::Ones(num_positions)) {}
 
 DifferentialInverseKinematicsResult DoDifferentialInverseKinematics(
     const Eigen::Ref<const VectorX<double>>& q_current,
@@ -133,34 +137,32 @@ DifferentialInverseKinematicsResult DoDifferentialInverseKinematics(
 
     // Constrain the end effector motion to be in the direction of V,
     // and penalize magnitude difference from V.
-    MatrixX<double> A(num_cart_constraints, num_velocities + 1);
+    MatrixXd A(num_cart_constraints, num_velocities + 1);
     A.leftCols(num_velocities) = J;
     A.rightCols(1) = -V_dir;
     prog.AddLinearEqualityConstraint(
         A, VectorX<double>::Zero(num_cart_constraints), {v_next, alpha});
     // TODO(russt): This should not be hard-coded.
-    const double kCartesianTrackingWeight = 100;
     cart_cost =
-        prog.AddQuadraticErrorCost(Vector1<double>(kCartesianTrackingWeight),
-                                   Vector1<double>(V_mag), alpha)
+        prog.AddQuadraticErrorCost(Vector1d(1.0), Vector1d(V_mag), alpha)
             .evaluator()
             .get();
 
-    // Constrain the unconstrained DoFs velocity to be small, which is used
-    // to fulfill the regularization cost.  We use the svd of J = UΣV', in
-    // which the columns of V corresponding to the small/zero singular values
-    // in Σ are the "unconstrained" degrees of freedom.  Since JacobiSVD
-    // always sorts the singular values in decreasing order, we expect these
-    // to be the last columns.  We assume that J is full row-rank, so has
-    // num_cart_constraints non-zero singular values.
-    Eigen::JacobiSVD<MatrixX<double>> svd(J, Eigen::ComputeFullV);
-    if (parameters.get_unconstrained_degrees_of_freedom_velocity_limit()) {
-      const double uncon_v =
-          parameters.get_unconstrained_degrees_of_freedom_velocity_limit()
-              .value();
-      for (int i = num_cart_constraints; i < num_velocities; i++) {
-        prog.AddLinearConstraint(svd.matrixV().col(i).transpose(), -uncon_v,
-                                 uncon_v, v_next);
+    // Add a cost to move back towards q_nominal, in the null-space of J.
+    // The typical I - J'*J'⁺ can be simplified, using J = UΣV' via svd:
+    //   J' = VΣU',
+    //   J'⁺ = U'Σ⁺V',
+    //   J'J'⁺ = VΣΣ⁺V' where ΣΣ⁺ is 1 for diagonal entries corresponding to
+    //                  non-zero singular values.
+    // We assume (for now) that J is full row rank.  Since JacobiSVD returns
+    // the singular values in decreasing order, we have
+    //  ΣΣ⁺ << Identity(J.rows(),J.cols()), Zeros(J.cols()-J.rows(), J.cols()).
+    const VectorXd v_desired = parameters.get_nominal_joint_position_gain()
+        .asDiagonal()*(parameters.get_nominal_joint_position() - q_current);
+    Eigen::JacobiSVD<MatrixXd> svd(J, Eigen::ComputeFullV);
+
+    for (int i = num_cart_constraints; i < num_velocities; i++) {
+        prog.AddQuadraticErrorCost(identity_num_positions - svd.matrixV()*);
       }
     }
   }

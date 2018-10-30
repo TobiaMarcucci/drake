@@ -74,13 +74,12 @@ class DifferentialInverseKinematicsParameters {
     return nominal_joint_position_;
   }
 
-  const Vector6<double>& get_end_effector_velocity_gain() const {
-    return gain_E_;
+  const VectorX<double>& get_nominal_joint_position_gain() const {
+    return nominal_joint_position_gain_;
   }
 
-  const optional<double>& get_unconstrained_degrees_of_freedom_velocity_limit()
-      const {
-    return unconstrained_degrees_of_freedom_velocity_limit_;
+  const Vector6<double>& get_end_effector_velocity_gain() const {
+    return gain_E_;
   }
 
   const optional<std::pair<VectorX<double>, VectorX<double>>>&
@@ -114,16 +113,6 @@ class DifferentialInverseKinematicsParameters {
   }
 
   /**
-   * Sets the max magnitude of the velocity in the unconstrained degree of
-   * freedom to @p limit.
-   * @throws std::exception if limit < 0.
-   */
-  void set_unconstrained_degrees_of_freedom_velocity_limit(double limit) {
-    DRAKE_THROW_UNLESS(limit >= 0);
-    unconstrained_degrees_of_freedom_velocity_limit_ = limit;
-  }
-
-  /**
    * Sets the nominal joint position.
    * @throws std::exception if @p nominal_joint_position's dimension differs.
    */
@@ -132,6 +121,19 @@ class DifferentialInverseKinematicsParameters {
     DRAKE_THROW_UNLESS(nominal_joint_position.size() == get_num_positions());
     nominal_joint_position_ = nominal_joint_position;
   }
+
+  /**
+   * Sets the nominal joint position gain.  In the null-space of the
+   * end-effector Jacobian, we attempt to track with
+   *   v_desired = kp .* (q_nominal - q_current),
+   * where the multiplication is element-wise and the parameter kp is the
+   * gain being set by this method.
+   * @throws std::exception if @p kp does not have the right size.
+   */
+   void set_nominal_joint_position_gain(const Eigen::Ref<const VectorXd& kp) {
+     DRAKE_THROW_UNLESS(kp.size() == get_num_positions());
+     nominal_joint_position_gain_ = kp;
+   }
 
   /**
    * Sets the end effector gains in the body frame. Gains can be used to
@@ -214,7 +216,8 @@ class DifferentialInverseKinematicsParameters {
  private:
   int num_positions_{0};
   int num_velocities_{0};
-  VectorX<double> nominal_joint_position_;
+  VectorXd nominal_joint_position_;
+  VectorXd nominal_joint_position_gain_;
   optional<std::pair<VectorX<double>, VectorX<double>>> q_bounds_{};
   optional<std::pair<VectorX<double>, VectorX<double>>> v_bounds_{};
   optional<std::pair<VectorX<double>, VectorX<double>>> vd_bounds_{};
@@ -229,20 +232,16 @@ class DifferentialInverseKinematicsParameters {
  * Computes a generalized velocity v_next, via the following
  * MathematicalProgram:
  *
- *   min_{v_next,alpha}   100 * | alpha - |V| |^2
- *                        // iff J.rows() < J.cols(), then
- *                          + | q_current + v_next*dt - q_nominal |^2
+ *   min_{v_next,alpha}   | alpha - |V| |^2
+ *                        + (v_next - v_desired)'(I - J'J'⁺)(v_next - v_desired)
+ *                        // with v_desired = k_p*(q_nominal - q_current)
+ *                        // and J'⁺ the pseudo-inverse of J'.
  *
  *   s.t. J*v_next = alpha * V / |V|  // J*v_next has the same direction as V
  *        joint_lim_min <= q_current + v_next*dt <= joint_lim_max
  *        joint_vel_lim_min <= v_next <= joint_vel_lim_max
  *        joint_accel_lim_min <= (v_next - v_current)/dt <=
- *          joint_accel_lim_max
- *        for all i > J.rows(),
- *          -unconstrained_vel_lim <= S.col(i)' v_next <= unconstrained_vel_lim
- *          where J = UΣS' is the SVD, with the singular values in decreasing
- *          order.  Note that the constraint is imposed on each column
- *          independently.
+ *          joint_accel_lim_max.
  *
  *        and any additional linear constraints added via
  *          AddLinearVelocityConstraint() in the
