@@ -64,8 +64,14 @@ PYBIND11_MODULE(planner, m) {
             class_doc.get_num_velocities.doc)
         .def("get_nominal_joint_position", &Class::get_nominal_joint_position,
             class_doc.get_nominal_joint_position.doc)
+        .def("get_nominal_joint_position_gain",
+            &Class::get_nominal_joint_position_gain,
+             class_doc.get_nominal_joint_position_gain.doc)
         .def("set_nominal_joint_position", &Class::set_nominal_joint_position,
-            class_doc.set_nominal_joint_position.doc)
+             class_doc.set_nominal_joint_position.doc)
+        .def("set_nominal_joint_position_gain",
+            &Class::set_nominal_joint_position_gain,
+            class_doc.set_nominal_joint_position_gain.doc)
         .def("get_end_effector_velocity_gain",
              &Class::get_end_effector_velocity_gain,
              class_doc.get_end_effector_velocity_gain.doc)
