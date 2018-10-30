@@ -130,9 +130,10 @@ class DifferentialInverseKinematicsParameters {
    * gain being set by this method.
    * @throws std::exception if @p kp does not have the right size.
    */
-   void set_nominal_joint_position_gain(const Eigen::Ref<const VectorXd& kp) {
-     DRAKE_THROW_UNLESS(kp.size() == get_num_positions());
-     nominal_joint_position_gain_ = kp;
+  void set_nominal_joint_position_gain(
+      const Eigen::Ref<const VectorX<double>>& kp) {
+    DRAKE_THROW_UNLESS(kp.size() == get_num_positions());
+    nominal_joint_position_gain_ = kp;
    }
 
   /**
@@ -216,8 +217,8 @@ class DifferentialInverseKinematicsParameters {
  private:
   int num_positions_{0};
   int num_velocities_{0};
-  VectorXd nominal_joint_position_;
-  VectorXd nominal_joint_position_gain_;
+  VectorX<double> nominal_joint_position_;
+  VectorX<double> nominal_joint_position_gain_;
   optional<std::pair<VectorX<double>, VectorX<double>>> q_bounds_{};
   optional<std::pair<VectorX<double>, VectorX<double>>> v_bounds_{};
   optional<std::pair<VectorX<double>, VectorX<double>>> vd_bounds_{};

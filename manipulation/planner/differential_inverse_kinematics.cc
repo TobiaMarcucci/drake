@@ -159,12 +159,11 @@ DifferentialInverseKinematicsResult DoDifferentialInverseKinematics(
     //  ΣΣ⁺ << Identity(J.rows(),J.cols()), Zeros(J.cols()-J.rows(), J.cols()).
     const VectorXd v_desired = parameters.get_nominal_joint_position_gain()
         .asDiagonal()*(parameters.get_nominal_joint_position() - q_current);
-    Eigen::JacobiSVD<MatrixXd> svd(J, Eigen::ComputeFullV);
-
-    for (int i = num_cart_constraints; i < num_velocities; i++) {
-        prog.AddQuadraticErrorCost(identity_num_positions - svd.matrixV()*);
-      }
-    }
+//    Eigen::JacobiSVD<MatrixXd> svd(J, Eigen::ComputeFullV);
+    MatrixXd Jpinv = J.completeOrthogonalDecomposition().pseudoInverse();
+    prog.AddQuadraticErrorCost(
+        identity_num_positions - J.transpose() * Jpinv.transpose(), v_desired,
+        v_next);
   }
 
   for (const auto& constraint : parameters.get_linear_velocity_constraints()) {

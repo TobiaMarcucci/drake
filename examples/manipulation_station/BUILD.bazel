@@ -77,6 +77,14 @@ drake_py_binary(
     ],
 )
 
+drake_py_binary(
+    name = "end_effector_teleop",
+    srcs = ["end_effector_teleop.py"],
+    deps = [
+        "//bindings/pydrake",
+    ],
+)
+
 install_data()
 
 add_lint_tests()

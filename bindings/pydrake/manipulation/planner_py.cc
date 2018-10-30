@@ -72,12 +72,6 @@ PYBIND11_MODULE(planner, m) {
         .def("set_end_effector_velocity_gain",
              &Class::set_end_effector_velocity_gain,
              class_doc.set_end_effector_velocity_gain.doc)
-        .def("get_unconstrained_degrees_of_freedom_velocity_limit",
-             &Class::get_unconstrained_degrees_of_freedom_velocity_limit,
-             class_doc.get_unconstrained_degrees_of_freedom_velocity_limit.doc)
-        .def("set_unconstrained_degrees_of_freedom_velocity_limit",
-             &Class::set_unconstrained_degrees_of_freedom_velocity_limit,
-             class_doc.set_unconstrained_degrees_of_freedom_velocity_limit.doc)
         .def("get_joint_position_limits", &Class::get_joint_position_limits,
            class_doc.get_joint_position_limits.doc)
         .def("set_joint_position_limits", &Class::set_joint_position_limits,
