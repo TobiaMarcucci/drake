@@ -21,6 +21,7 @@ from pydrake.systems.analysis import Simulator
 from pydrake.systems.framework import (AbstractValue, BasicVector,
                                        DiagramBuilder, LeafSystem,
                                        PortDataType)
+from pydrake.systems.lcm import LcmPublisherSystem
 from pydrake.systems.meshcat_visualizer import MeshcatVisualizer
 from pydrake.systems.primitives import FirstOrderLowPassFilter
 from pydrake.util.eigen_geometry import Isometry3, AngleAxis
@@ -264,6 +265,9 @@ parser.add_argument(
     '--setup', type=str, default='default',
     help="The manipulation station setup to simulate. ",
     choices=['default', 'clutter_clearing'])
+parser.add_argument(
+    '--cameras', action='store_true',
+    help="Publish camera output ports to LCM.")
 
 MeshcatVisualizer.add_argparse_argument(parser)
 args = parser.parse_args()
@@ -326,6 +330,24 @@ builder.Connect(wsg_buttons.GetOutputPort("position"), station.GetInputPort(
     "wsg_position"))
 builder.Connect(wsg_buttons.GetOutputPort("force_limit"),
                 station.GetInputPort("wsg_force_limit"))
+
+if args.cameras:
+    image_to_lcm_image_array = builder.AddSystem(ImageToLcmImageArrayT())
+    image_to_lcm_image_array.set_name("converter")
+    for name : station->get_camera_names():
+        cam_port = image_to_lcm_image_array.DeclareImageInputPort<systems::sensors::PixelType::kRgba8U>(
+        "camera_" + name)
+        builder.Connect(station->GetOutputPort("camera_" + name + "_rgb_image"),
+                         cam_port)
+    }
+
+    image_array_lcm_publisher = builder.AddSystem(LcmPublishSystem.Make(
+    "DRAKE_RGBD_CAMERA_IMAGES", nullptr,
+    1.0 / 10 /* 10 fps publish period);
+    image_array_lcm_publisher->set_name("rgbd_publisher")
+    builder.Connect(image_to_lcm_image_array.image_array_t_msg_output_port(),
+                                          image_array_lcm_publisher.get_input_port())
+
 
 diagram = builder.Build()
 simulator = Simulator(diagram)
