@@ -73,6 +73,10 @@ void PiecewiseQuaternionSlerp<T>::Initialize(
     }
   }
   ComputeAngularVelocities();
+  this->set_coordinate_name(0, "x");
+  this->set_coordinate_name(1, "y");
+  this->set_coordinate_name(2, "z");
+  this->set_coordinate_name(3, "w");
 }
 
 template <typename T>
@@ -173,11 +177,19 @@ std::unique_ptr<Trajectory<T>> PiecewiseQuaternionSlerp<T>::DoMakeDerivative(
     std::vector<MatrixX<T>> m(angular_velocities_.begin(),
                               angular_velocities_.end());
     m.push_back(Vector3<T>::Zero());
-    return PiecewisePolynomial<T>::ZeroOrderHold(
+    auto pp = PiecewisePolynomial<T>::ZeroOrderHold(
       this->get_segment_times(), m).Clone();
+    pp->set_coordinate_name(0, "x");
+    pp->set_coordinate_name(1, "y");
+    pp->set_coordinate_name(2, "z");
+    return pp;
   }
   // All higher derivatives are zero.
-  return std::make_unique<PiecewisePolynomial<T>>(Vector3<T>::Zero());
+  auto pp = std::make_unique<PiecewisePolynomial<T>>(Vector3<T>::Zero());
+  pp->set_coordinate_name(0, "x");
+  pp->set_coordinate_name(1, "y");
+  pp->set_coordinate_name(2, "z");
+  return pp;
 }
 
 template class PiecewiseQuaternionSlerp<double>;

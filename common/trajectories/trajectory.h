@@ -1,6 +1,9 @@
 #pragma once
 
+#include <map>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include <Eigen/Core>
@@ -27,6 +30,34 @@ class Trajectory {
    * @return A deep copy of this Trajectory.
    */
   virtual std::unique_ptr<Trajectory<T>> Clone() const = 0;
+
+  /** Returns a string name for the component at the specified @p row and @p
+   * col. */
+  std::string get_coordinate_name(int row, int col) const;
+
+  /** Returns a string name for the component at the specified @p index. */
+  std::string get_coordinate_name(int index) const;
+
+  /** Returns the name of this trajectory. */
+  std::string get_name(void) const;
+
+  /** Returns a string name for the component at the specified @p row and @p
+   * col. */
+  void set_coordinate_name(int row, int col, std::string name) const;
+
+  /** Returns a string name for the component at the specified @p index. */
+  void set_coordinate_name(int index, std::string name) const;
+
+  /** Sets the name of the trajectory.  For scalar trajectories, this is the
+   * only name.  For trajectories with multiple rows or columns, this sets the
+   * default coordinate names to e.g. `name(row, col)`.
+   */
+  void set_name(std::string name);
+
+  /** Sets the names from another trajectory.  If any coordinate names are set,
+   * in @p other, then `this` must have the same number of rows and columns as
+   * @p other. */
+  void set_names_from(const Trajectory<T>& other);
 
   /**
    * Evaluates the trajectory at the given time \p t.
@@ -95,6 +126,16 @@ class Trajectory {
 
   virtual std::unique_ptr<Trajectory<T>> DoMakeDerivative(
       int derivative_order) const;
+
+ private:
+  friend class Trajectory<T>;
+
+  // Optional name for the trajectory, which provides a default name of the
+  // coordinates; e.g. name_(i,j).
+  std::string name_{"x"};
+
+  // Provides an optional (partial) map of (row,col) => name.
+  std::map<std::pair<int, int>, std::string> coordinate_names_{};
 };
 
 }  // namespace trajectories

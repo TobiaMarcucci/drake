@@ -1,9 +1,65 @@
 #include "drake/common/trajectories/trajectory.h"
 
+#include "fmt/format.h"
+
 #include "drake/common/unused.h"
 
 namespace drake {
 namespace trajectories {
+
+template <typename T>
+std::string Trajectory<T>::get_coordinate_name(int row, int col) const {
+  DRAKE_DEMAND(row >=0 && row < rows());
+  DRAKE_DEMAND(col >=0 && col < cols());
+  const auto name = coordinate_names_.find({row, col});
+  if (name != coordinate_names_.end()) {
+    return name->second();
+  }
+  return fmt::format("{}({},{})", name_, row, col);
+}
+
+template <typename T>
+std::string Trajectory<T>::get_coordinate_name(int index) const {
+  DRAKE_DEMAND(index >=0 && index < rows()*cols());
+  int row = index % rows();
+  int col = index / cols();
+  const auto name = coordinate_names_.find({row, col});
+  if (name != coordinate_names_.end()) {
+    return name->second();
+  }
+  return fmt::format("{}({},{})", name_, row, col);
+}
+
+template <typename T>
+std::string Trajectory<T>::get_name(void) const {
+  return name_;
+}
+
+template <typename T>
+void Trajectory<T>::set_coordinate_name(int row, int col, std::string name) {
+  DRAKE_DEMAND(row >=0 && row < rows());
+  DRAKE_DEMAND(col >=0 && col < cols());
+  coordinate_name_.insert_or_assign({row, col}) = name;
+}
+
+template <typename T>
+void Trajectory<T>::set_coordinate_name(int index, std::string name) {
+  DRAKE_DEMAND(index >=0 && index < rows()*cols());
+  int row = index % rows();
+  int col = index / cols();
+  coordinate_name_.insert_or_assign({row, col}) = name;
+}
+
+template <typename T>
+void Trajectory<T>::set_name(std::string name) {
+  name_ = name;
+}
+
+template <typename T>
+void Trajectory<T>::set_names_from(const Trajectory<T>& other) {
+  name_ = other.name_;
+  coordinate_names_ = other.coordinate_names_;
+}
 
 template <typename T>
 MatrixX<T> Trajectory<T>::vector_values(const std::vector<T>& t) const {
