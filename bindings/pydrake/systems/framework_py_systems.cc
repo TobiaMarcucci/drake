@@ -78,6 +78,7 @@ struct Impl {
     using Base::DeclareAbstractState;
     using Base::DeclareContinuousState;
     using Base::DeclareDiscreteState;
+    using Base::DeclareImplicitTimeDerivativesResidualSize;
     using Base::DeclareInitializationEvent;
     using Base::DeclareNumericParameter;
     using Base::DeclarePeriodicDiscreteUpdate;
@@ -94,6 +95,7 @@ struct Impl {
     // (Otherwise, we get an error about inaccessible downcasting when trying to
     // bind `PyLeafSystem::DoPublish` to `py::class_<LeafSystem<T>, ...>`.
     using Base::DoCalcDiscreteVariableUpdates;
+    using Base::DoCalcImplicitTimeDerivativesResidual;
     using Base::DoCalcTimeDerivatives;
     using Base::DoPublish;
   };
@@ -128,6 +130,18 @@ struct Impl {
           void, LeafSystem<T>, "DoCalcTimeDerivatives", &context, derivatives);
       // If the macro did not return, use default functionality.
       Base::DoCalcTimeDerivatives(context, derivatives);
+    }
+
+    void DoCalcImplicitTimeDerivativesResidual(const Context<T>& context,
+        const ContinuousState<T>& proposed_derivatives,
+        EigenPtr<VectorX<T>> residual) const override {
+      // See `DoPublish` for explanation.
+      PYBIND11_OVERLOAD_INT(void, LeafSystem<T>,
+          "DoCalcImplicitTimeDerivativesResidual", &context,
+          proposed_derivatives, residual);
+      // If the macro did not return, use default functionality.
+      Base::DoCalcImplicitTimeDerivativesResidual(
+          context, proposed_derivatives, residual);
     }
 
     void DoCalcDiscreteVariableUpdates(const Context<T>& context,
@@ -341,6 +355,10 @@ struct Impl {
             overload_cast_explicit<unique_ptr<ContinuousState<T>>>(
                 &System<T>::AllocateTimeDerivatives),
             doc.System.AllocateTimeDerivatives.doc)
+        .def("AllocateImplicitTimeDerivativesResidual",
+            overload_cast_explicit<VectorX<T>>(
+                &System<T>::AllocateImplicitTimeDerivativesResidual),
+            doc.System.AllocateImplicitTimeDerivativesResidual.doc)
         .def("AllocateDiscreteVariables",
             overload_cast_explicit<unique_ptr<DiscreteValues<T>>>(
                 &System<T>::AllocateDiscreteVariables),
@@ -375,6 +393,10 @@ struct Impl {
         .def("CalcTimeDerivatives", &System<T>::CalcTimeDerivatives,
             py::arg("context"), py::arg("derivatives"),
             doc.System.CalcTimeDerivatives.doc)
+        .def("CalcImplicitTimeDerivativesResidual",
+            &System<T>::CalcImplicitTimeDerivativesResidual, py::arg("context"),
+            py::arg("proposed_derivatives"), py::arg("residual"),
+            doc.System.CalcImplicitTimeDerivativesResidual.doc)
         .def("CalcDiscreteVariableUpdates",
             overload_cast_explicit<void, const Context<T>&, DiscreteValues<T>*>(
                 &System<T>::CalcDiscreteVariableUpdates),
@@ -664,6 +686,8 @@ Note: The above is for the C++ documentation. For Python, use
             py::arg("num_state_variables"),
             doc.LeafSystem.DeclareDiscreteState.doc_1args_num_state_variables)
         .def("DoCalcTimeDerivatives", &LeafSystemPublic::DoCalcTimeDerivatives)
+        .def("DoCalcImplicitTimeDerivativesResidual",
+            &LeafSystemPublic::DoCalcImplicitTimeDerivativesResidual)
         .def("DoCalcDiscreteVariableUpdates",
             &LeafSystemPublic::DoCalcDiscreteVariableUpdates,
             doc.LeafSystem.DoCalcDiscreteVariableUpdates.doc)
@@ -671,7 +695,12 @@ Note: The above is for the C++ documentation. For Python, use
         .def("DeclareAbstractState",
             py::overload_cast<const AbstractValue&>(
                 &LeafSystemPublic::DeclareAbstractState),
-            doc.LeafSystem.DeclareAbstractState.doc);
+            doc.LeafSystem.DeclareAbstractState.doc)
+        // Implicit time derivatives.
+        .def("DeclareImplicitTimeDerivativesResidualSize",
+            &LeafSystemPublic::DeclareImplicitTimeDerivativesResidualSize,
+            py::arg("n"),
+            doc.LeafSystem.DeclareImplicitTimeDerivativesResidualSize.doc);
 
     DefineTemplateClassWithDefault<Diagram<T>, PyDiagram, System<T>>(
         m, "Diagram", GetPyParam<T>(), doc.Diagram.doc)
@@ -755,6 +784,10 @@ void DoScalarIndependentDefinitions(py::module m) {
         .def("num_numeric_parameter_groups",
             &Class::num_numeric_parameter_groups,
             cls_doc.num_numeric_parameter_groups.doc)
+        // Implicit time derivatives.
+        .def("implicit_time_derivatives_residual_size",
+            &Class::implicit_time_derivatives_residual_size,
+            cls_doc.implicit_time_derivatives_residual_size.doc)
         // Dependency tickets that do not have an index argument.
         .def_static("accuracy_ticket", &Class::accuracy_ticket,
             cls_doc.accuracy_ticket.doc)

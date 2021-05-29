@@ -532,6 +532,16 @@ void DoScalarDependentDefinitions(py::module m, T) {
         .def("CalcInverseDynamics", &Class::CalcInverseDynamics,
             py::arg("context"), py::arg("known_vdot"),
             py::arg("external_forces"), cls_doc.CalcInverseDynamics.doc)
+        // MultibodyPlant's implementation of
+        // CalcImplicitTimeDerivativesResidual is implemented via NVI in
+        // MultibodyTreeSystem, but we provide public facing documentation in
+        // multibody_plant.h.  We redeclare the base class method here only to
+        // get that MultibodyPlant-specific documentation.
+        .def("CalcImplicitTimeDerivativesResidual",
+            &systems::System<T>::CalcImplicitTimeDerivativesResidual,
+            py::arg("context"), py::arg("proposed_derivatives"),
+            py::arg("residual"),
+            cls_doc.CalcImplicitTimeDerivativesResidual.doc)
         .def("CalcForceElementsContribution",
             &Class::CalcForceElementsContribution, py::arg("context"),
             py::arg("forces"), cls_doc.CalcForceElementsContribution.doc)
