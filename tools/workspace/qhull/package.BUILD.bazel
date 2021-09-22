@@ -1,0 +1,33 @@
+# -*- python -*-
+
+load(
+    "@drake//tools/install:install.bzl",
+    "install",
+)
+
+licenses(["notice"])  # Copyright
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "qhull",
+    hdrs = glob(["src/libqhullcpp/*.h", "src/libqhull_r/*.h"]),
+    includes = ["src"],
+    srcs = glob([
+        "src/libqhull_r/*.c",
+        "src/libqhullcpp/*.cpp",
+        "src/libqhullcpp/*.h",
+      ], 
+      exclude = [
+        "src/libqhullcpp/qt-qhull.cpp",
+        "src/libqhullcpp/usermem_r-cpp.cpp",
+      ],
+    ),
+    linkstatic = 1,
+)
+
+# Install the license file.
+install(
+    name = "install",
+    docs = ["LICENSE"],
+)

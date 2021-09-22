@@ -155,6 +155,23 @@ GTEST_TEST(VPolytopeTest, UnitBox6DTest) {
   EXPECT_FALSE(V.PointInSet(out2_W, kTol));
 }
 
+GTEST_TEST(VPolytopeTest, FromHPolyhedronTest) {
+  HPolyhedron H = HPolyhedron::MakeUnitBox(6);
+  VPolytope V(H);
+  EXPECT_EQ(V.ambient_dimension(), 6);
+  EXPECT_EQ(V.vertices().rows(), 6);
+  EXPECT_EQ(V.vertices().cols(), 8);
+
+  Vector6d in1_W{Vector6d::Constant(-.99)}, in2_W{Vector6d::Constant(.99)},
+      out1_W{Vector6d::Constant(-1.01)}, out2_W{Vector6d::Constant(1.01)};
+
+  const double kTol = 1e-11;
+  EXPECT_TRUE(V.PointInSet(in1_W, kTol));
+  EXPECT_TRUE(V.PointInSet(in2_W, kTol));
+  EXPECT_FALSE(V.PointInSet(out1_W, kTol));
+  EXPECT_FALSE(V.PointInSet(out2_W, kTol));
+}
+
 GTEST_TEST(VPolytopeTest, CloneTest) {
   VPolytope V = VPolytope::MakeBox(Vector3d{-3, -4, -5}, Vector3d{6, 7, 8});
   std::unique_ptr<ConvexSet> clone = V.Clone();

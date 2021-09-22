@@ -3,6 +3,8 @@
 #include <limits>
 #include <memory>
 
+#include "libqhullcpp/Qhull.h"
+
 #include "drake/common/is_approx_equal_abstol.h"
 #include "drake/solvers/solve.h"
 
@@ -38,6 +40,12 @@ VPolytope::VPolytope(const QueryObject<double>& query_object,
   const RigidTransformd& X_WG = query_object.GetPoseInWorld(geometry_id);
   const RigidTransformd X_EG = X_WE.InvertAndCompose(X_WG);
   vertices_ = X_EG * vertices;
+}
+
+VPolytope::VPolytope(const HPolyhedron& hpoly)
+    : ConvexSet(&ConvexSetCloner<VPolytope>, hpoly.ambient_dimension()) {
+  orgQhull::Qhull qhull;
+  unused(qhull);
 }
 
 VPolytope::~VPolytope() = default;

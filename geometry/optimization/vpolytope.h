@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "drake/geometry/optimization/convex_set.h"
+#include "drake/geometry/optimization/hpolyhedron.h"
 
 namespace drake {
 namespace geometry {
@@ -34,6 +35,9 @@ class VPolytope final : public ConvexSet {
   /** Construct the polytope from a SceneGraph geometry. */
   VPolytope(const QueryObject<double>& query_object, GeometryId geometry_id,
             std::optional<FrameId> reference_frame = std::nullopt);
+
+  /** Constructs the polytope from a bounded polyhedron (using qhull). */
+  explicit VPolytope(const HPolyhedron& hpoly);
 
   ~VPolytope() final;
 
