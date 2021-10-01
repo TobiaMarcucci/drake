@@ -1,0 +1,85 @@
+# -*- python -*-
+
+load(
+    "@drake//tools/install:install.bzl",
+    "install",
+)
+load(
+    "@drake//tools/workspace:cmake_configure_file.bzl",
+    "cmake_configure_file",
+)
+licenses(["notice"])  # Apache-2.0
+
+package(default_visibility = ["//visibility:public"])
+
+# IBEX has the following dependencies in addition to those declared in deps:
+#   Clp: EPL-1
+#   CoinUtils: EPL-1
+#   bzip2: bzip2-1.0.6
+
+# Generates config.h based on the defines= we want in Drake.
+#cmake_configure_file(
+#    name = "ibex_Setting",
+#    src = "src/ibex_Setting.h.in",
+#    out = "src/ibex_Setting.h",
+#    defines = ["IBEX_VERSION=2.8.9", "INTERVAL_LIB=gaol", "LP_LIB=none"],
+#    visibility = ["//visibility:private"],
+#)
+
+# TODO: generate src/arithmetic/ibex_Interval.h.in and .cpp.in 
+# using variables defined in plugins/interval_lib_goal/wscript,
+# then roughly the same thing for the LP solver with clp.
+cmake_configure_file(
+    name = "interval_cpp",
+    src = "src/arithmetic/ibex_Interval.cpp.in",
+    out = "src/arithmetic/ibex_Interval.cpp",
+    defines = ["_IBEX_INTERVAL_WRAPPER=none"],
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "ibex",
+    srcs = glob(["src/**/*.cpp"]) + [
+        "src/arithmetic/ibex_Interval.cpp",
+        "src/numeric/ibex_LPSolver.cpp",
+        "src/symbolic/ibex_ExprOperators.cpp",
+    ],
+    hdrs = glob(["src/**/*.h"]) + [
+        "src/arithmetic/ibex_Interval.h",
+        "src/numeric/ibex_LPSolver.h",
+        "src/symbolic/ibex_ExprOperators.h",
+    ],
+    includes = glob(["src/*"], 
+        exclude=["src/wscript"],
+        exclude_directories=0
+    ),
+#    hdrs = glob(["src/**/*.h"]) + ["src/ibex_Setting.h"],
+#    includes = glob(["src/*"], 
+#        exclude=["src/wscript", "src/*.*"],
+#        exclude_directories=0
+#    ) + ["src"],
+    copts = ["-w"],
+    licenses = [
+        "notice",  # bzip2-1.0.6
+        "reciprocal",  # EPL-1
+        "restricted",  # LGPL-3.0
+    ],
+    # The linkopts= here are transcribed from the contents of the *.pc file.
+    linkopts = [
+        "-lClp",  # TODO(russt): Replace with @dep (and change comment above)?
+        "-lCoinUtils",
+        "-lbz2",
+        "-lm",
+    ],
+    # The deps= here are transcribed from the contents of the *.pc file.
+    deps = [
+        "@blas",
+        "@lapack",
+        "@zlib",
+    ],
+)
+
+install(
+    name = "install",
+    docs = ["LICENSE"],
+)
