@@ -44,8 +44,34 @@ VPolytope::VPolytope(const QueryObject<double>& query_object,
 
 VPolytope::VPolytope(const HPolyhedron& hpoly)
     : ConvexSet(&ConvexSetCloner<VPolytope>, hpoly.ambient_dimension()) {
+  Eigen::MatrixXd coeffs(hpoly.A().rows(), hpoly.A().cols() + 1);
+  coeffs.leftCols(hpoly.A().cols()) = hpoly.A();
+  coeffs.col(hpoly.A().cols()) = -hpoly.b();
+
+  Eigen::MatrixXd coeffs_t = coeffs.transpose();
+  std::vector<double> flat_coeffs;
+  flat_coeffs.resize(coeffs_t.size());
+  Eigen::VectorXd::Map(&flat_coeffs[0], coeffs_t.size()) = coeffs_t;
+
+  Eigen::VectorXd eigen_center = hpoly.ChebyshevCenter();
+  std::vector<double> center;
+  center.resize(eigen_center.size());
+  Eigen::VectorXd::Map(&center[0], eigen_center.size()) = eigen_center;
+
   orgQhull::Qhull qhull;
-  unused(qhull);
+  qhull.setFeasiblePoint(orgQhull::Coordinates(center));
+  qhull.runQhull("", hpoly.A().cols() + 1, hpoly.A().rows(), flat_coeffs.data(),
+                 "H");
+
+  vertices_.resize(hpoly.ambient_dimension(), qhull.facetCount());
+  int ii = 0;
+  for (orgQhull::QhullFacet facet = qhull.beginFacet();
+       facet != qhull.endFacet(); facet = facet.next()) {
+    std::vector<double> vertex = facet.getCenter().toStdVector();
+    vertices_.col(ii) = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(
+        vertex.data(), vertex.size()) * hpoly.ambient_dimension();
+    ii++;
+  }
 }
 
 VPolytope::~VPolytope() = default;
