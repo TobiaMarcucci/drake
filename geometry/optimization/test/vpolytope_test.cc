@@ -160,7 +160,7 @@ GTEST_TEST(VPolytopeTest, FromHPolyhedronTest) {
   VPolytope V(H);
   EXPECT_EQ(V.ambient_dimension(), 6);
   EXPECT_EQ(V.vertices().rows(), 6);
-  EXPECT_EQ(V.vertices().cols(), 8);
+  EXPECT_EQ(V.vertices().cols(), std::pow(2, 6));
 
   Vector6d in1_W{Vector6d::Constant(-.99)}, in2_W{Vector6d::Constant(.99)},
       out1_W{Vector6d::Constant(-1.01)}, out2_W{Vector6d::Constant(1.01)};
