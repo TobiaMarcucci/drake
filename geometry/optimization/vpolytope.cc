@@ -44,6 +44,9 @@ VPolytope::VPolytope(const QueryObject<double>& query_object,
 
 VPolytope::VPolytope(const HPolyhedron& hpoly)
     : ConvexSet(&ConvexSetCloner<VPolytope>, hpoly.ambient_dimension()) {
+
+  DRAKE_DEMAND(hpoly.IsBounded());
+
   Eigen::MatrixXd coeffs(hpoly.A().rows(), hpoly.A().cols() + 1);
   coeffs.leftCols(hpoly.A().cols()) = hpoly.A();
   coeffs.col(hpoly.A().cols()) = -hpoly.b();
